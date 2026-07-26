@@ -1,1 +1,36 @@
-services: {}
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: finlens-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-finlens}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-1234}
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  aggregation-service:
+    build:
+      context: ./aggregation-service
+    container_name: finlens-aggregation
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-finlens}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-1234}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

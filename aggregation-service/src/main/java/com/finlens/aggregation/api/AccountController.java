@@ -1,9 +1,9 @@
 package com.finlens.aggregation.api;
 
-import com.finlens.aggregation.model.Account;
 import com.finlens.aggregation.repository.AccountRepository;
 import com.finlens.aggregation.repository.TransactionRepository;
 import java.util.List;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,8 +21,10 @@ public class AccountController {
     }
 
     @GetMapping
-    public List<AccountResponse> getAccounts() {
-        return accountRepository.findAll().stream()
+    public List<AccountResponse> getAccounts(Authentication authentication) {
+        Long userId = Long.valueOf(authentication.getName());
+
+        return accountRepository.findByUserId(userId).stream()
                 .map(account -> new AccountResponse(account, transactionRepository.findByAccountIdOrderByTimestampDesc(account.getId())))
                 .toList();
     }

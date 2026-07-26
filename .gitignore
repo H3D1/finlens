@@ -1,0 +1,28 @@
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Node.js
+node_modules/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
