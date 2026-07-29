@@ -8,12 +8,22 @@ The project is built to demonstrate three real, current fintech engineering them
 
 ## Current status
 
-- Backend service: Spring Boot 3.4.1
-- Verified runtime: Java 17.0.19
-- Verified build tool: Maven 3.9.16
-- Validation command: `mvn clean test`
-- Validation result: `BUILD SUCCESS`
-- Active module: `aggregation-service`
+- **Aggregation service:** Spring Boot 3.4.1 (Java 17, Maven)
+- **Insights service:** FastAPI (Python 3.12)
+- **Fraud service:** FastAPI (Python 3.12)
+- **Frontend:** React 19 + Vite + TypeScript
+- **Database:** PostgreSQL
+- **Containerization:** Docker + Docker Compose
+- **CI/CD:** GitHub Actions — build, test, and Docker image build on push to `main`
+
+## Services
+
+| Service | Language | Framework | Port |
+|---|---|---|---|
+| `aggregation-service` | Java 17 | Spring Boot 3.4.1 | 8080 |
+| `insights-service` | Python 3.12 | FastAPI | 8000 |
+| `fraud-service` | Python 3.12 | FastAPI | 8001 |
+| `frontend` | TypeScript | React 19 / Vite | 5173 |
 
 ## Why this project
 
@@ -28,25 +38,157 @@ Current fintech industry trends point to three specific gaps this project addres
 1. **Account aggregation**
    - 2-3 mock account types (e.g. checking, savings, credit card), each with seeded synthetic transaction data
    - Single unified API response normalizing all account types into one schema
+   - JWT-based authentication with register and login endpoints
 
 2. **Proactive insights**
    - Rule-based observations generated from aggregated data, e.g.:
-     - Spending increase by category, month over month
-     - Recurring subscription detection
-     - Balance trend projection (days until threshold at current rate)
+     - **Spending increase by category** — compares current month total to prior 2-month average, flags categories with ≥25% increase
+     - **Recurring subscription detection** — groups transactions by description and amount, identifies monthly charges with 25–35 day gaps
+     - **Balance trend projection** — projects days until zero based on average daily net change over the last 14 days
 
 3. **Fraud/anomaly check**
-   - Runs as a background check on incoming transactions, not a separate module
-   - Starts rule-based (velocity checks, per-user deviation from historical average) with room to extend to a statistical (z-score) or lightweight ML (Isolation Forest) approach later
+   - Runs as a background check on incoming transactions
+   - **Velocity check** — detects bursts of outgoing transactions exceeding a threshold within a rolling time window (e.g. 5 transactions in 10 minutes)
 
 ## Architecture
 
-- **Backend:** Spring Boot (Java) — REST API, JWT authentication
-- **Frontend:** React — dashboard showing aggregated accounts, insights, and flagged activity
-- **Database:** PostgreSQL
-- **Containerization:** Docker + Docker Compose
-- **Deployment:** AWS EC2 (t3.micro) + RDS (db.t3.micro)
-- **CI/CD:** GitHub Actions — build and test on push
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   Frontend   │     │  Insights    │     │    Fraud     │
+│   React 19   │     │  FastAPI     │     │  FastAPI     │
+│   :5173      │     │  :8000       │     │  :8001       │
+└──────┬───────┘     └──────┬───────┘     └──────┬───────┘
+       │                    │                    │
+       └─────────┬──────────┴──────────┬─────────┘
+                 │                     │
+        ┌────────▼────────┐   ┌───────▼────────┐
+        │  Aggregation    │   │  PostgreSQL    │
+        │  Spring Boot    │   │  :5432         │
+        │  :8080          │   └────────────────┘
+        └─────────────────┘
+```
+
+## Running locally
+
+### Prerequisites
+- Java 17, Maven, Python 3.12, Node.js 20+
+- Docker (optional, for Postgres)
+
+### 1. Start PostgreSQL
+```bash
+docker compose up -d postgres
+```
+
+### 2. Start the aggregation service
+```bash
+cd aggregation-service
+mvn spring-boot:run
+```
+
+### 3. Start the insights service
+```bash
+cd insights-service
+python -m venv venv && .\venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+### 4. Start the fraud service
+```bash
+cd fraud-service
+python -m venv venv && .\venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8001
+```
+
+### 5. Start the frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend dev server proxies `/api/*` requests to the aggregation service at `localhost:8080`.
+
+### Docker Compose (everything)
+```bash
+docker compose up --build
+```
+
+### Running tests
+
+```bash
+# Aggregation service
+cd aggregation-service && mvn clean test
+
+# Insights service
+cd insights-service && .\venv\Scripts\python -m pytest tests/ -v
+
+# Fraud service
+cd fraud-service && .\venv\Scripts\python -m pytest tests/ -v
+```
+
+## API overview
+
+### Aggregation service (`:8080`)
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/auth/register` | Register a new user |
+| POST | `/auth/login` | Login, returns JWT |
+| GET | `/accounts` | List accounts with transactions (requires JWT) |
+
+### Insights service (`:8000`)
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/insights/{user_id}` | Spending alerts, subscriptions, balance projection |
+| GET | `/health` | Health check |
+
+### Fraud service (`:8001`)
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/health` | Health check |
+
+## Frontend
+
+The React frontend provides:
+
+- **Login page** — email/password form that calls `/api/auth/login`, stores the JWT in localStorage, and redirects to the dashboard
+- **Dashboard** — protected route that requires a valid JWT; displays the authenticated user's email and a sign-out button (account data and insights to follow)
+
+## Project structure
+
+```
+finlens/
+├── aggregation-service/    # Spring Boot — account data & auth
+│   ├── Dockerfile
+│   ├── pom.xml
+│   └── src/
+├── insights-service/       # FastAPI — spending insights
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── app/
+│       ├── insights.py     # Core insight functions
+│       ├── main.py
+│       └── models.py
+├── fraud-service/          # FastAPI — fraud detection
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── app/
+│       ├── fraud.py        # Velocity check
+│       └── main.py
+├── frontend/               # React 19 + Vite
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── src/
+│       ├── auth/           # AuthContext, ProtectedRoute
+│       └── pages/          # LoginPage, DashboardPage
+├── docker-compose.yml
+├── .github/workflows/ci.yml
+└── README.md
+```
 
 ## Explicitly out of scope for v1
 
