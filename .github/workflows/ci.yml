@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+
+  # ─── Aggregation Service (Java / Maven) ───────────────────────────────
+  aggregation-service:
+    name: Aggregation Service
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: maven
+
+      - name: Run tests
+        run: mvn clean test
+        working-directory: aggregation-service
+
+      - name: Build Docker image
+        run: docker build -t finlens/aggregation-service:latest .
+        working-directory: aggregation-service
+
+  # ─── Insights Service (Python / FastAPI) ──────────────────────────────
+  insights-service:
+    name: Insights Service
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: insights-service/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        working-directory: insights-service
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
+        working-directory: insights-service
+
+      - name: Build Docker image
+        run: docker build -t finlens/insights-service:latest .
+        working-directory: insights-service
+
+  # ─── Fraud Service (Python / FastAPI) ─────────────────────────────────
+  fraud-service:
+    name: Fraud Service
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: fraud-service/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        working-directory: fraud-service
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
+        working-directory: fraud-service
+
+      - name: Build Docker image
+        run: docker build -t finlens/fraud-service:latest .
+        working-directory: fraud-service

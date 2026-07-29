@@ -24,5 +24,9 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Python virtual environments
+venv/
+.venv/
+
 # Docker
 docker-compose.override.yml
