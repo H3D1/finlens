@@ -11,6 +11,14 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/insights': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/fraud': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
     },
   },
 });

@@ -55,6 +55,7 @@ def check_velocity(
                     "total_amount": float(abs(total)),
                     "earliest": start.isoformat(),
                     "latest": end.isoformat(),
+                    "transaction_ids": [t.id for t in window],
                 })
                 # Move past this window to avoid a cluster of overlapping alerts
                 # by skipping ahead to the next transaction after this window

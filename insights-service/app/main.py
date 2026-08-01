@@ -19,18 +19,20 @@ AGGREGATION_SERVICE_URL = os.getenv(
 
 
 @app.get("/insights/{user_id}")
-async def get_insights(user_id: int):
+async def get_insights(user_id: int, authorization: str | None = None):
     """
     Fetch accounts and transactions for the given user from the aggregation
     service, compute spending alerts, recurring subscriptions, and a balance
     projection, then return a structured JSON response.
     """
+    headers = {}
+    if authorization:
+        headers["Authorization"] = authorization
+
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             f"{AGGREGATION_SERVICE_URL}/accounts",
-            # The aggregation-service's Authentication is extracted from
-            # the principal name. We pass the user_id as the principal.
-            headers={"X-User-Id": str(user_id)},
+            headers=headers,
         )
 
     if resp.is_error:
