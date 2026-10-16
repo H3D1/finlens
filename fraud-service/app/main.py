@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 
 from .models import AccountWithTransactions
 from .fraud import check_velocity
@@ -16,7 +16,10 @@ AGGREGATION_SERVICE_URL = os.getenv(
 
 
 @app.get("/fraud/flags/{user_id}")
-async def get_fraud_flags(user_id: int, authorization: str | None = None):
+async def get_fraud_flags(
+    user_id: int,
+    authorization: str | None = Header(default=None),
+):
     """
     Fetch the user's accounts/transactions from the aggregation service,
     run the velocity check, and return flagged transactions with a reason.

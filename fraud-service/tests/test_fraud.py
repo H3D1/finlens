@@ -70,6 +70,15 @@ class TestCheckVelocity:
         assert alerts[0]["transaction_count"] == 5
         assert alerts[0]["window_minutes"] == 10
         assert alerts[0]["actual_span_minutes"] <= 10
+        assert alerts[0]["rule_id"] == "transaction_velocity"
+        assert alerts[0]["reason"] == (
+            "5 outgoing transactions detected within 10 minutes."
+        )
+        assert alerts[0]["threshold"] == {
+            "transaction_count": 5,
+            "window_minutes": 10,
+        }
+        assert alerts[0]["transaction_ids"] == [1, 2, 3, 4, 5]
 
     def test_no_alert_when_tx_spread_over_30_minutes(self):
         """Five outgoing transactions spread over 30 minutes -> no alert."""

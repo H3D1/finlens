@@ -1,6 +1,6 @@
 import os
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from typing import Optional
 
 from .models import AccountWithTransactions
@@ -19,7 +19,10 @@ AGGREGATION_SERVICE_URL = os.getenv(
 
 
 @app.get("/insights/{user_id}")
-async def get_insights(user_id: int, authorization: str | None = None):
+async def get_insights(
+    user_id: int,
+    authorization: str | None = Header(default=None),
+):
     """
     Fetch accounts and transactions for the given user from the aggregation
     service, compute spending alerts, recurring subscriptions, and a balance

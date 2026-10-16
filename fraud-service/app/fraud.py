@@ -48,6 +48,15 @@ def check_velocity(
             if span <= window_minutes:
                 total = sum(t.amount for t in window)
                 alerts.append({
+                    "rule_id": "transaction_velocity",
+                    "reason": (
+                        f"{max_transactions} outgoing transactions detected "
+                        f"within {window_minutes} minutes."
+                    ),
+                    "threshold": {
+                        "transaction_count": max_transactions,
+                        "window_minutes": window_minutes,
+                    },
                     "account_id": acc_id,
                     "transaction_count": max_transactions,
                     "window_minutes": window_minutes,
