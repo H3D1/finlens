@@ -59,29 +59,34 @@ The dashboard includes separate sections for overview, security, transactions, a
 FinLens separates data access and aggregation from financial analysis. The frontend communicates with the services through HTTP APIs, while the Insights and Fraud services obtain the account data they need from the Aggregation service.
 
 ```mermaid
-flowchart TB
-    U["User / Browser"]
+flowchart LR
+    User(["User"])
+    UI["<b>FinLens Dashboard</b><br/>React · TypeScript · Vite"]
 
-    subgraph FE["Frontend"]
-        R["React 19 + TypeScript + Vite"]
-    end
-
-    subgraph SERVICES["Backend Services"]
-        A["Aggregation Service<br/>Spring Boot · Java 17<br/>Port 8080"]
-        I["Insights Service<br/>FastAPI · Python<br/>Port 8001"]
-        F["Fraud Service<br/>FastAPI · Python<br/>Port 8000"]
+    subgraph Backend["FinLens 0.4 · Backend"]
+        INS["<b>Insights Service</b><br/>Python · FastAPI<br/>Port 8001"]
+        FRAUD["<b>Fraud Detection Service</b><br/>Python · FastAPI<br/>Port 8000"]
+        API["<b>Aggregation Service</b><br/>Java 17 · Spring Boot<br/>Port 8080"]
     end
 
     DB[("PostgreSQL")]
 
-    U --> R
-    R -->|"/api/*"| A
-    R -->|"/insights/*"| I
-    R -->|"/fraud/*"| F
+    User --> UI
+    UI -->|"/insights"| INS
+    UI -->|"/fraud"| FRAUD
+    UI -->|"/api · JWT"| API
 
-    A <--> DB
-    I -->|"Fetch account data<br/>with forwarded authorization"| A
-    F -->|"Fetch account data<br/>with forwarded authorization"| A
+    INS -.->|"HTTP · Authorization"| API
+    FRAUD -.->|"HTTP · Authorization"| API
+    API <-->|"Read / write"| DB
+
+    classDef frontend fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:2px
+    classDef backend fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef database fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:2px
+
+    class UI frontend
+    class API,INS,FRAUD backend
+    class DB database
 ```
 
 ### Service responsibilities
